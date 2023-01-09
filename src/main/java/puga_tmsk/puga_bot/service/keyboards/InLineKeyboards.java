@@ -1,48 +1,32 @@
 package puga_tmsk.puga_bot.service.keyboards;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.ReplyKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardButton;
-import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.KeyboardRow;
 import puga_tmsk.puga_bot.model.ShoppingList;
 import puga_tmsk.puga_bot.model.ShoppingListRepository;
-
 import java.util.ArrayList;
 import java.util.List;
 
 public class InLineKeyboards {
 
-    public InlineKeyboardMarkup getMainInLineKeyboard() {
+    public InlineKeyboardMarkup getMain() {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         List<InlineKeyboardButton> keyboardRow1 = new ArrayList<>();
-
-        InlineKeyboardButton shoppingList = new InlineKeyboardButton();
-        shoppingList.setText("Список покупок");
-        shoppingList.setCallbackData("/shoppinglist");
-        keyboardRow1.add(shoppingList);
-
+        InlineKeyboardButton lists = new InlineKeyboardButton();
+        lists.setText("Списки");
+        lists.setCallbackData("/lists");
+        keyboardRow1.add(lists);
 
         List<InlineKeyboardButton> keyboardRow2 = new ArrayList<>();
-
-        InlineKeyboardButton wishList = new InlineKeyboardButton();
-        wishList.setText("Вишлист");
-        wishList.setCallbackData("/wishlist");
-        keyboardRow2.add(wishList);
-
-        List<InlineKeyboardButton> keyboardRow3 = new ArrayList<>();
-
-        InlineKeyboardButton reminder = new InlineKeyboardButton();
-        reminder.setText("Напоминания");
-        reminder.setCallbackData("/reminder");
-        keyboardRow3.add(reminder);
+        InlineKeyboardButton monthlyPayments = new InlineKeyboardButton();
+        monthlyPayments.setText("Ежемесячные платежи (в разработке)");
+        monthlyPayments.setCallbackData("/monthly_payments");
+        keyboardRow2.add(monthlyPayments);
 
         keyboardRows.add(keyboardRow1);
-//        keyboardRows.add(keyboardRow2);
-//        keyboardRows.add(keyboardRow3);
+        keyboardRows.add(keyboardRow2);
 
         final InlineKeyboardMarkup mainInLineKeyboard = new InlineKeyboardMarkup();
         mainInLineKeyboard.setKeyboard(keyboardRows);
@@ -50,7 +34,46 @@ public class InLineKeyboards {
         return mainInLineKeyboard;
     }
 
-    public InlineKeyboardMarkup getShoppingListKeyboard(Long chatId, String message, ShoppingListRepository shoppingListRepository) {
+    public InlineKeyboardMarkup getLists() {
+
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        List<InlineKeyboardButton> keyboardRow1 = new ArrayList<>();
+        InlineKeyboardButton shoppingList = new InlineKeyboardButton();
+        shoppingList.setText("Сходить в магазин");
+        shoppingList.setCallbackData("/shoppinglist");
+        keyboardRow1.add(shoppingList);
+
+        List<InlineKeyboardButton> keyboardRow2 = new ArrayList<>();
+        InlineKeyboardButton wishList = new InlineKeyboardButton();
+        wishList.setText("Вишлист (в разработке)");
+        wishList.setCallbackData("/wishlist");
+        keyboardRow2.add(wishList);
+
+        List<InlineKeyboardButton> keyboardRow3 = new ArrayList<>();
+        InlineKeyboardButton subscriptions = new InlineKeyboardButton();
+        subscriptions.setText("Подписки (в разработке)");
+        subscriptions.setCallbackData("/subscriptions");
+        keyboardRow3.add(subscriptions);
+
+        List<InlineKeyboardButton> keyboardRow4 = new ArrayList<>();
+        InlineKeyboardButton back = new InlineKeyboardButton();
+        back.setText("Назад");
+        back.setCallbackData("/main");
+        keyboardRow4.add(back);
+
+        keyboardRows.add(keyboardRow1);
+        keyboardRows.add(keyboardRow2);
+        keyboardRows.add(keyboardRow3);
+        keyboardRows.add(keyboardRow4);
+
+        final InlineKeyboardMarkup mainInLineKeyboard = new InlineKeyboardMarkup();
+        mainInLineKeyboard.setKeyboard(keyboardRows);
+
+        return mainInLineKeyboard;
+    }
+
+    public InlineKeyboardMarkup getShoppingList(Long chatId, String message, ShoppingListRepository shoppingListRepository) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
@@ -65,13 +88,20 @@ public class InLineKeyboards {
         additems.setCallbackData("/shoplistadditems");
         keyboardRow1.add(additems);
 
-        InlineKeyboardButton clearall = new InlineKeyboardButton();
-        clearall.setText("Очистить все");
-        clearall.setCallbackData("/shoplistclear");
-        keyboardRow1.add(clearall);
+//        InlineKeyboardButton clearall = new InlineKeyboardButton();
+//        clearall.setText("Удалить все");
+//        clearall.setCallbackData("/shoplistclear");
+//        keyboardRow1.add(clearall);
 
+        List<InlineKeyboardButton> keyboardRow2 = new ArrayList<>();
+
+        InlineKeyboardButton back = new InlineKeyboardButton();
+        back.setText("Назад");
+        back.setCallbackData("/lists");
+        keyboardRow1.add(back);
 
         keyboardRows.add(keyboardRow1);
+        keyboardRows.add(keyboardRow2);
 
         final InlineKeyboardMarkup mainInLineKeyboard = new InlineKeyboardMarkup();
         mainInLineKeyboard.setKeyboard(keyboardRows);
@@ -79,7 +109,7 @@ public class InLineKeyboards {
         return mainInLineKeyboard;
     }
 
-    public InlineKeyboardMarkup getShoppingListAddKeyboard(Long chatId, String message, ShoppingListRepository shoppingListRepository) {
+    public InlineKeyboardMarkup getShoppingListAdd(Long chatId, String message, ShoppingListRepository shoppingListRepository) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
@@ -101,6 +131,7 @@ public class InLineKeyboards {
 
         return mainInLineKeyboard;
     }
+
     private List<List<InlineKeyboardButton>> generateShoppingListButtons(Long chatId, String message, ShoppingListRepository shoppingListRepository) {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
