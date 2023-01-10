@@ -4,19 +4,25 @@ import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import puga_tmsk.puga_bot.config.BotStatus;
+import puga_tmsk.puga_bot.model.MonthlyPayments;
 import puga_tmsk.puga_bot.model.User;
 import puga_tmsk.puga_bot.service.TelegramBot;
+import puga_tmsk.puga_bot.service.apps.MonthlyPaymentsApp;
 import puga_tmsk.puga_bot.service.apps.ShoppingListApp;
-import puga_tmsk.puga_bot.service.apps.UserActions;
+import puga_tmsk.puga_bot.service.apps.UserActionsApp;
 import puga_tmsk.puga_bot.service.keyboards.InLineKeyboards;
+
+import java.math.BigDecimal;
 
 @Slf4j
 public class MainTextHandler {
 
     private TelegramBot telegramBot;
     private final InLineKeyboards inLineKeyboards;
-    private UserActions userActions;
-    private ShoppingListApp shoppingList;
+
+    private UserActionsApp userActionsApp;
+    private ShoppingListApp shoppingListApp;
+    private MonthlyPaymentsApp monthlyPaymentsApp;
 
     private static final String HELP_TEXT = "Это мой тестовый бот. \n\n" +
             "Он уже умеет хранить список покупок для удобного похода в магазин :) \n" +
@@ -24,11 +30,12 @@ public class MainTextHandler {
             "В магазине просто нажимай на пункт, чтобы он ушел из списка. Удачных покупок :)";
 
 
-    public MainTextHandler(TelegramBot tgb, UserActions ua, ShoppingListApp sl) {
+    public MainTextHandler(TelegramBot tgb) {
         telegramBot = tgb;
         inLineKeyboards = new InLineKeyboards();
-        userActions = ua;
-        shoppingList = sl;
+        userActionsApp = tgb.getUserActions();
+        shoppingListApp = tgb.getShoppingList();
+        monthlyPaymentsApp = tgb.getMonthlyPayments();
     }
 
     public void mesageHandler(Update update) {
@@ -51,7 +58,7 @@ public class MainTextHandler {
             switch (messageText) {
                 case "/start":
                     telegramBot.setBotStatus(chatId, userName, BotStatus.MAIN);
-                    userActions.registerUser(msg);
+                    userActionsApp.registerUser(msg);
                     telegramBot.startCommandRecieved(chatId, userFirstName);
                     break;
                 case "/main":
@@ -75,11 +82,22 @@ public class MainTextHandler {
                                 telegramBot.editMessage(chatId, msg, "Сходить в магазин", inLineKeyboards.getShoppingList(chatId, messageText, telegramBot.getShoppingListRepository()));
                                 break;
                             default:
-                                shoppingList.addItem(chatId, messageText);
+                                shoppingListApp.addItem(chatId, messageText);
+                        }
+                    } else if (botStatus.name().contains("MONTHLY_PAYMENTS_ADD_")) {
+                        if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME) {
+                            monthlyPaymentsApp.addItemName(chatId, messageText);
+                            telegramBot.setBotStatus(chatId, "", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE);
+                            telegramBot.sendMessage(chatId, "Введи сумму платежа:", "", inLineKeyboards.getMonthlyPaymentsAdd());
+                        } else if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
+                            //TODO добавить обработку значения
+                            monthlyPaymentsApp.addItemPrice(chatId, messageText);
+                            telegramBot.setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS);
+                            telegramBot.sendMessage(chatId, "Ежемесячные платежи", "", inLineKeyboards.getMonthlyPayments(chatId, "", telegramBot.getMonthlyPaymentsRepository()));
                         }
                     } else {
-                        telegramBot.sendMessage(chatId, "Чет не то, бро","", inLineKeyboards.getMain());
-                        log.info("MESSAGE: User " + userFirstName + " send command " + messageText);
+                            telegramBot.sendMessage(chatId, "Чет не то, бро","", inLineKeyboards.getMain());
+                            log.info("MESSAGE: User " + userFirstName + " send command " + messageText);
                     }
             }
         }

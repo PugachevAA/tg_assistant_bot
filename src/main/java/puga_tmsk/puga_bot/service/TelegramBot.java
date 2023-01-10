@@ -10,7 +10,6 @@ import org.telegram.telegrambots.meta.api.methods.commands.SetMyCommands;
 import org.telegram.telegrambots.meta.api.methods.send.SendMessage;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageReplyMarkup;
 import org.telegram.telegrambots.meta.api.methods.updatingmessages.EditMessageText;
-import org.telegram.telegrambots.meta.api.objects.Chat;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import org.telegram.telegrambots.meta.api.objects.Update;
 import org.telegram.telegrambots.meta.api.objects.commands.BotCommand;
@@ -20,8 +19,9 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import puga_tmsk.puga_bot.config.BotConfig;
 import puga_tmsk.puga_bot.config.BotStatus;
 import puga_tmsk.puga_bot.model.*;
+import puga_tmsk.puga_bot.service.apps.MonthlyPaymentsApp;
 import puga_tmsk.puga_bot.service.apps.ShoppingListApp;
-import puga_tmsk.puga_bot.service.apps.UserActions;
+import puga_tmsk.puga_bot.service.apps.UserActionsApp;
 import puga_tmsk.puga_bot.service.keyboards.InLineKeyboards;
 import puga_tmsk.puga_bot.service.keyboards.ReplyKeyboards;
 import puga_tmsk.puga_bot.service.updateHandlers.MainTextHandler;
@@ -35,10 +35,13 @@ public class TelegramBot extends TelegramLongPollingBot {
 
     final BotConfig config;
 
-    private final UserActions userActions;
+    private final UserActionsApp userActions;
     private final ShoppingListApp shoppingList;
+    private final MonthlyPaymentsApp monthlyPayments;
+
     private final ReplyKeyboards replyKeyboards;
     private final InLineKeyboards inLineKeyboards;
+
     private final MainTextHandler mainTextHandler;
 
     @Autowired
@@ -47,15 +50,20 @@ public class TelegramBot extends TelegramLongPollingBot {
     private ShoppingListRepository shoppingListRepository;
     @Autowired
     private UserSettingsRepository userSettingsRepository;
+    @Autowired
+    private MonthlyPaymentsRepository monthlyPaymentsRepository;
 
 
     public TelegramBot(BotConfig config) {
 
-        userActions = new UserActions(this);
+        userActions = new UserActionsApp(this);
         shoppingList = new ShoppingListApp(this);
+        monthlyPayments = new MonthlyPaymentsApp(this);
+
         replyKeyboards = new ReplyKeyboards();
         inLineKeyboards = new InLineKeyboards();
-        mainTextHandler = new MainTextHandler(this, userActions, shoppingList);
+
+        mainTextHandler = new MainTextHandler(this);
 
         this.config = config;
         List<BotCommand> menu = new ArrayList<>();
@@ -106,12 +114,12 @@ public class TelegramBot extends TelegramLongPollingBot {
             botStatus = getBotStatus(chatId);
 
             if (botStatus == BotStatus.SHOPPING_LIST_ADD) {
-                switch (messageText) {
-                    case "/shoplistendadd":
-                        setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
-                        sendMessage(chatId, "Твой список покупок:", userFirstName, inLineKeyboards.getShoppingList(chatId, messageText, shoppingListRepository));
-                        break;
+
+                if (messageText.contains("/shoplistendadd")) {
+                    setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
+                    sendMessage(chatId, "Твой список покупок:", userFirstName, inLineKeyboards.getShoppingList(chatId, messageText, shoppingListRepository));
                 }
+
                 if (messageText.contains("/shoppinglist_")) {
                     String[] itemId = messageText.split("_");
                     shoppingListRepository.deleteById(Long.valueOf(itemId[1]));
@@ -119,34 +127,71 @@ public class TelegramBot extends TelegramLongPollingBot {
                     sendMessage(chatId, "Вводи товары по одному, как закончишь нажми Закончить", userFirstName, inLineKeyboards.getShoppingListAdd(chatId, messageText, shoppingListRepository));
 
                 }
-            } else //if (botStatus == BotStatus.SHOPPING_LIST){
-            {
+
+            } else if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
+
+                if (messageText.contains("/monthly_payments_add_cancel")) {
+                    monthlyPayments.cancelAddItem(chatId);
+                    setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS);
+                    sendMessage(chatId, "Ежемесячные платежи:", userFirstName, inLineKeyboards.getMonthlyPayments(chatId, messageText, monthlyPaymentsRepository));
+                }
+
+            } else {
+
                 if (messageText.contains("/shoppinglist_")) {
                     String[] itemId = messageText.split("_");
                     shoppingListRepository.deleteById(Long.valueOf(itemId[1]));
                     editMessage(chatId, msg, "", inLineKeyboards.getShoppingList(chatId, messageText, shoppingListRepository));
                 }
-                    switch (messageText) {
-                        case "/main":
-                            setBotStatus(chatId, userName, BotStatus.MAIN);
-                            editMessage(chatId, msg, "Главное меню", inLineKeyboards.getMain());
-                            break;
-                        case "/lists":
-                            setBotStatus(chatId, userName, BotStatus.MAIN);
-                            editMessage(chatId, msg, "Списки", inLineKeyboards.getLists());
-                            break;
-                        case "/shoppinglist":
-                            setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
-                            editMessage(chatId, msg, "Сходить в магазин", inLineKeyboards.getShoppingList(chatId, messageText, shoppingListRepository));
-                            break;
-                        case "/wishlist":
-                            //sendMessage(chatId, "Твой вишлист:", userFirstName, inLineKeyboards.g(chatId, messageText, shoppingListRepository));
-                            //setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
-                            break;
-                        case "/shoplistadditems":
-                            setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST_ADD);
-                            editMessage(chatId, msg, "Вводи и отправляй покупки по одному сообщению, в конце нажми Закончить", inLineKeyboards.getShoppingListAdd(chatId, messageText, shoppingListRepository));
-                            break;
+
+                if (messageText.contains("/monthly_payments_item_view_")) {
+                    String[] itemId = messageText.split("_");
+                    long id = Long.parseLong(itemId[4]);
+                    setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS);
+                    editMessage(chatId
+                            , msg
+                            , monthlyPaymentsRepository.findById(id).get().getTitle() + ", "
+                                                + monthlyPaymentsRepository.findById(id).get().getPrice()
+                            , inLineKeyboards.getMonthlyPaymentsEdit(id));
+                }
+
+                if (messageText.contains("/monthly_payments_item_delete_")) {
+                    String[] itemId = messageText.split("_");
+                    long id = Long.parseLong(itemId[4]);
+                    monthlyPayments.deleteItem(id);
+                    setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS);
+                    editMessage(chatId, msg, "Ежемесячные платежи", inLineKeyboards.getMonthlyPayments(chatId,"",monthlyPaymentsRepository));
+                }
+
+                switch (messageText) {
+                    case "/main":
+                        setBotStatus(chatId, userName, BotStatus.MAIN);
+                        editMessage(chatId, msg, "Главное меню", inLineKeyboards.getMain());
+                        break;
+                    case "/lists":
+                        setBotStatus(chatId, userName, BotStatus.MAIN);
+                        editMessage(chatId, msg, "Списки", inLineKeyboards.getLists());
+                        break;
+                    case "/monthly_payments":
+                        setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS);
+                        editMessage(chatId, msg, "Ежемесячные платежи", inLineKeyboards.getMonthlyPayments(chatId, messageText, monthlyPaymentsRepository));
+                        break;
+                    case "/monthly_payments_add":
+                        setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS_ADD_NAME);
+                        editMessage(chatId, msg, "Введи название платежа", inLineKeyboards.getMonthlyPaymentsAdd());
+                        break;
+                    case "/shoppinglist":
+                        setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
+                        editMessage(chatId, msg, "Сходить в магазин", inLineKeyboards.getShoppingList(chatId, messageText, shoppingListRepository));
+                        break;
+                    case "/shoplistadditems":
+                        setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST_ADD);
+                        editMessage(chatId, msg, "Вводи и отправляй покупки по одному сообщению, в конце нажми Закончить", inLineKeyboards.getShoppingListAdd(chatId, messageText, shoppingListRepository));
+                        break;
+                    case "/wishlist":
+                        //sendMessage(chatId, "Твой вишлист:", userFirstName, inLineKeyboards.g(chatId, messageText, shoppingListRepository));
+                        //setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
+                        break;
 //                        case "/shoplistclear":
 //                            setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
 //                            shoppingList.clear(chatId);

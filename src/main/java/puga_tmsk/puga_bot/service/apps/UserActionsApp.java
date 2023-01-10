@@ -10,11 +10,11 @@ import puga_tmsk.puga_bot.service.TelegramBot;
 import java.sql.Timestamp;
 
 @Slf4j
-public class UserActions {
+public class UserActionsApp {
 
     private final TelegramBot telegramBot;
 
-    public UserActions(TelegramBot tgb) {
+    public UserActionsApp(TelegramBot tgb) {
         telegramBot = tgb;
     }
 
