@@ -1,9 +1,9 @@
 package puga_tmsk.puga_bot.service.apps;
 
+import org.telegram.telegrambots.meta.api.objects.Message;
+import puga_tmsk.puga_bot.config.BotStatus;
 import puga_tmsk.puga_bot.model.MonthlyPayments;
 import puga_tmsk.puga_bot.service.TelegramBot;
-
-import javax.persistence.Id;
 import java.math.BigDecimal;
 
 public class MonthlyPaymentsApp {
@@ -13,25 +13,26 @@ public class MonthlyPaymentsApp {
         telegramBot = tgb;
     }
 
-    public void addItemName(Long chatId, String messageText) {
+    public void addItemName(Message msg) {
         MonthlyPayments mpForAdd = new MonthlyPayments();
-        mpForAdd.setUserId(chatId);
-        mpForAdd.setTitle(messageText);
+        mpForAdd.setUserId(msg.getChatId());
+        mpForAdd.setTitle(msg.getText());
         mpForAdd.setPrice(BigDecimal.valueOf(0));
         mpForAdd.setAddFinish(false);
         telegramBot.getMonthlyPaymentsRepository().save(mpForAdd);
     }
-    public void addItemPrice(Long chatId, String messageText) {
-        MonthlyPayments mpForAdd = telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(chatId, false);
+
+    public void addItemPrice(Message msg) {
+        MonthlyPayments mpForAdd = telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(msg.getChatId(), false);
         Double price;
         try {
-            price = new Double(messageText);
+            price = new Double(msg.getText());
             mpForAdd.setPrice(BigDecimal.valueOf(price));
             mpForAdd.setAddFinish(true);
             telegramBot.getMonthlyPaymentsRepository().save(mpForAdd);
         } catch (NumberFormatException e) {
-            price = null; // не-а, не double
-            telegramBot.sendMessage(chatId, "Неверно введена цена, попробуй еще раз", "", telegramBot.getInLineKeyboards().getMonthlyPaymentsAdd());
+            telegramBot.sendMessage(msg,"Неверно введена цена, попробуй еще раз", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE,
+                    telegramBot.getInLineKeyboards().getMonthlyPaymentsAdd());
         }
 
     }

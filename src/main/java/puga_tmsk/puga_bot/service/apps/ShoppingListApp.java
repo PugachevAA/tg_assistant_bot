@@ -1,5 +1,7 @@
 package puga_tmsk.puga_bot.service.apps;
 
+import org.telegram.telegrambots.meta.api.objects.Message;
+import puga_tmsk.puga_bot.config.BotStatus;
 import puga_tmsk.puga_bot.model.ShoppingList;
 import puga_tmsk.puga_bot.service.TelegramBot;
 
@@ -13,13 +15,11 @@ public class ShoppingListApp {
     }
 
 
-    public void addItem(Long chatId, String messageText) {
+    public void addItem(Message msg) {
+        telegramBot.getShoppingListRepository().save(new ShoppingList(msg.getChatId(), msg.getText()));
 
-        shoppingList = new ShoppingList(chatId, messageText);
-
-        telegramBot.getShoppingListRepository().save(shoppingList);
-        telegramBot.sendMessage(chatId, "Вводи товары по одному, как закончишь нажми Закончить", "",
-                                telegramBot.getInLineKeyboards().getShoppingListAdd(chatId, messageText, telegramBot.getShoppingListRepository()));
+        telegramBot.sendMessage(msg, "Вводи товары по одному, как закончишь нажми Закончить", BotStatus.SHOPPING_LIST_ADD,
+                                telegramBot.getInLineKeyboards().getShoppingListAdd(msg.getChatId(), telegramBot.getShoppingListRepository()));
     }
     public static void endAdd() {
     }

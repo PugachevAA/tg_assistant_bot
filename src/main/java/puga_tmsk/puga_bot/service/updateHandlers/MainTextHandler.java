@@ -2,27 +2,25 @@ package puga_tmsk.puga_bot.service.updateHandlers;
 
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.Message;
-import org.telegram.telegrambots.meta.api.objects.Update;
 import puga_tmsk.puga_bot.config.BotStatus;
-import puga_tmsk.puga_bot.model.MonthlyPayments;
 import puga_tmsk.puga_bot.model.User;
 import puga_tmsk.puga_bot.service.TelegramBot;
 import puga_tmsk.puga_bot.service.apps.MonthlyPaymentsApp;
 import puga_tmsk.puga_bot.service.apps.ShoppingListApp;
 import puga_tmsk.puga_bot.service.apps.UserActionsApp;
+import puga_tmsk.puga_bot.service.apps.WishListApp;
 import puga_tmsk.puga_bot.service.keyboards.InLineKeyboards;
-
-import java.math.BigDecimal;
 
 @Slf4j
 public class MainTextHandler {
 
-    private TelegramBot telegramBot;
+    private final TelegramBot telegramBot;
     private final InLineKeyboards inLineKeyboards;
 
-    private UserActionsApp userActionsApp;
-    private ShoppingListApp shoppingListApp;
-    private MonthlyPaymentsApp monthlyPaymentsApp;
+    private final UserActionsApp userActionsApp;
+    private final ShoppingListApp shoppingListApp;
+    private final MonthlyPaymentsApp monthlyPaymentsApp;
+    private final WishListApp wishListApp;
 
     private static final String HELP_TEXT = "Это мой тестовый бот. \n\n" +
             "Он уже умеет хранить список покупок для удобного похода в магазин :) \n" +
@@ -33,70 +31,70 @@ public class MainTextHandler {
     public MainTextHandler(TelegramBot tgb) {
         telegramBot = tgb;
         inLineKeyboards = new InLineKeyboards();
-        userActionsApp = tgb.getUserActions();
-        shoppingListApp = tgb.getShoppingList();
-        monthlyPaymentsApp = tgb.getMonthlyPayments();
+        userActionsApp = tgb.getUserActionsApp();
+        shoppingListApp = tgb.getShoppingListApp();
+        monthlyPaymentsApp = tgb.getMonthlyPaymentsApp();
+        wishListApp = tgb.getWishListApp();
     }
 
-    public void mesageHandler(Update update) {
+    public void mesageHandler(Message msg) {
         String messageText;
         String userFirstName;
-        String userName;
         long chatId;
         BotStatus botStatus;
-        Message msg;
 
-        if (update.getMessage().hasText()) {
+        if (msg.hasText()) {
 
-            msg = update.getMessage();
-            messageText = update.getMessage().getText();
-            userFirstName = update.getMessage().getChat().getFirstName();
-            userName = update.getMessage().getChat().getUserName();
-            chatId = update.getMessage().getChatId();
-            botStatus = telegramBot.getBotStatus(chatId);
+
+            messageText = msg.getText();
+            userFirstName = msg.getChat().getFirstName();
+            chatId = msg.getChatId();
+            botStatus = telegramBot.getBotStatus(msg);
 
             switch (messageText) {
                 case "/start":
-                    telegramBot.setBotStatus(chatId, userName, BotStatus.MAIN);
                     userActionsApp.registerUser(msg);
-                    telegramBot.startCommandRecieved(chatId, userFirstName);
+                    telegramBot.startCommandRecieved(msg);
                     break;
                 case "/main":
-                    telegramBot.setBotStatus(chatId, userName, BotStatus.MAIN);
-                    telegramBot.sendMessage(chatId, "Главное меню", "", inLineKeyboards.getMain());
+                    telegramBot.sendMessage(msg, "Главное меню",BotStatus.MAIN, inLineKeyboards.getMain());
                     break;
                 case "/help":
-                    telegramBot.sendMessage(chatId, HELP_TEXT, userFirstName, null);
+                    telegramBot.sendMessage(msg, HELP_TEXT, BotStatus.MAIN, null);
                     break;
                 case "/mydata":
                     User user = telegramBot.getUserRepository().findById(chatId).get();
                     String userData = user.toString();
-                    telegramBot.sendMessage(chatId, userData, userFirstName, null);
+                    telegramBot.sendMessage(msg, userData, BotStatus.MAIN, null);
                     break;
                 default:
                     if (botStatus == BotStatus.SHOPPING_LIST_ADD) {
                         switch (messageText) {
                             case "/shoplistendadd":
                                 ShoppingListApp.endAdd();
-                                telegramBot.setBotStatus(chatId, userName, BotStatus.SHOPPING_LIST);
-                                telegramBot.editMessage(chatId, msg, "Сходить в магазин", inLineKeyboards.getShoppingList(chatId, messageText, telegramBot.getShoppingListRepository()));
+                                telegramBot.editMessage(msg, "Сходить в магазин", BotStatus.SHOPPING_LIST,
+                                        inLineKeyboards.getShoppingList(chatId, telegramBot.getShoppingListRepository()));
                                 break;
                             default:
-                                shoppingListApp.addItem(chatId, messageText);
+                                shoppingListApp.addItem(msg);
                         }
                     } else if (botStatus.name().contains("MONTHLY_PAYMENTS_ADD_")) {
                         if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME) {
-                            monthlyPaymentsApp.addItemName(chatId, messageText);
-                            telegramBot.setBotStatus(chatId, "", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE);
-                            telegramBot.sendMessage(chatId, "Введи сумму платежа:", "", inLineKeyboards.getMonthlyPaymentsAdd());
+                            monthlyPaymentsApp.addItemName(msg);
+                            telegramBot.sendMessage(msg, "Введи сумму платежа:", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE,
+                                    inLineKeyboards.getMonthlyPaymentsAdd());
                         } else if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
-                            //TODO добавить обработку значения
-                            monthlyPaymentsApp.addItemPrice(chatId, messageText);
-                            telegramBot.setBotStatus(chatId, userName, BotStatus.MONTHLY_PAYMENTS);
-                            telegramBot.sendMessage(chatId, "Ежемесячные платежи", "", inLineKeyboards.getMonthlyPayments(chatId, "", telegramBot.getMonthlyPaymentsRepository()));
+                            monthlyPaymentsApp.addItemPrice(msg);
+                            telegramBot.sendMessage(msg, "Ежемесячные платежи", BotStatus.MONTHLY_PAYMENTS, inLineKeyboards.getMonthlyPayments(chatId, telegramBot.getMonthlyPaymentsRepository()));
                         }
+                    } else if (botStatus == BotStatus.WISH_LIST_ADD) {
+                        wishListApp.addWishList(msg);
+                    } else if (botStatus == BotStatus.WISH_LIST_ITEM_ADD) {
+                        wishListApp.addWishListItem(msg);
+                    } else if (botStatus == BotStatus.WISH_LIST_ITEM_ADD_LINK) {
+                        wishListApp.addWishListItemLink(msg);
                     } else {
-                            telegramBot.sendMessage(chatId, "Чет не то, бро","", inLineKeyboards.getMain());
+                            telegramBot.sendMessage(msg, "Чет не то, бро", BotStatus.MAIN, inLineKeyboards.getMain());
                             log.info("MESSAGE: User " + userFirstName + " send command " + messageText);
                     }
             }

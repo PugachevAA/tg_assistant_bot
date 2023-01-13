@@ -7,7 +7,12 @@ public enum BotStatus {
     MONTHLY_PAYMENTS(3),
     MONTHLY_PAYMENTS_ADD(4),
     MONTHLY_PAYMENTS_ADD_NAME(5),
-    MONTHLY_PAYMENTS_ADD_PRICE(6);
+    MONTHLY_PAYMENTS_ADD_PRICE(6),
+    WISH_LISTS(7),
+    WISH_LIST_ADD(8),
+    WISH_LIST_ITEMS(9),
+    WISH_LIST_ITEM_ADD(10),
+    WISH_LIST_ITEM_ADD_LINK(11);
 
 
     private int id;
@@ -18,13 +23,5 @@ public enum BotStatus {
 
     public int getId() {
         return id;
-    }
-    public BotStatus getStatusById(int id) {
-        for (BotStatus bs : BotStatus.values()) {
-            if (bs.getId() == id) {
-                return bs;
-            }
-        }
-        return null;
     }
 }

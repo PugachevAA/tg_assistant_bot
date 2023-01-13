@@ -20,6 +20,7 @@ public class UserActionsApp {
 
     public void registerUser(Message message) {
 
+        telegramBot.setBotStatus(message, BotStatus.MAIN);
 
         if(telegramBot.getUserRepository().findById(message.getChatId()).isEmpty()) {
 
@@ -36,7 +37,6 @@ public class UserActionsApp {
 
             telegramBot.getUserRepository().save(user);
 
-            telegramBot.setBotStatus(chatId, user.getUserName(), BotStatus.MAIN);
             log.info("User saved: " + user);
         }
     }
