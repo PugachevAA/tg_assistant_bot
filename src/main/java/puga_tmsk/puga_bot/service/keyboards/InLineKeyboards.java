@@ -102,7 +102,8 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateWishListItemsButtons(wishListId, wishListItemsRepository));
-        keyboardRows.add(row2btns(button("Добавить", "/wishlist_" + wishListId + "_items_add"), button("Назад", "/wishlists_menu")));
+        keyboardRows.add(row2btns(button("Добавить", "/wishlist_" + wishListId + "_items_add"), button("Удалить", "/wishlist_" + wishListId + "_delete")));
+        keyboardRows.add(row1btn(button("Назад", "/wishlists_menu")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }

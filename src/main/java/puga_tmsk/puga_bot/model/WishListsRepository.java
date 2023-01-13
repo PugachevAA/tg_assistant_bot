@@ -8,4 +8,5 @@ public interface WishListsRepository extends CrudRepository<WishLists, Long> {
 
     List<WishLists> findAllByUserId(long userId);
     WishLists findByUserIdAndAddMode(long userId, boolean addMode);
+    List<WishLists> findAllByUserIdAndAddMode(long userId, boolean addMode);
 }

@@ -8,6 +8,8 @@ import puga_tmsk.puga_bot.model.WishLists;
 import puga_tmsk.puga_bot.model.WishListsRepository;
 import puga_tmsk.puga_bot.service.TelegramBot;
 
+import java.util.List;
+
 public class WishListApp {
 
     TelegramBot telegramBot;
@@ -38,7 +40,7 @@ public class WishListApp {
     }
 
     public void addWishListItemMode(Message msg, long wishListId) {
-        changeWishListItemMode(wishListId, true);
+        changeWishListMode(wishListId, true);
         telegramBot.editMessage(msg, "Введи название своего желания: ",
                 BotStatus.WISH_LIST_ITEM_ADD, telegramBot.getInLineKeyboards().getCancelMenu("/wishlist_" + wishListId));
     }
@@ -48,8 +50,8 @@ public class WishListApp {
         long wishListId = Long.parseLong(listId[1]);
         long itemId = Long.parseLong(listId[3]);
         telegramBot.getWishListItemsRepository().deleteById(itemId);
-        telegramBot.editMessage(msg, telegramBot.getWishListItemsRepository().findById(itemId).get().getTitle(),
-                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListItemMenu(wishListId, itemId, telegramBot.getWishListItemsRepository()));
+        telegramBot.editMessage(msg, telegramBot.getWishListsRepository().findById(wishListId).get().getTitle(),
+                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(msg.getChatId(), telegramBot.getWishListItemsRepository()));
     }
 
     public void addWishListItemLinkMode(Message msg, String messageText) {
@@ -98,6 +100,17 @@ public class WishListApp {
         changeWishListItemMode(itemId, false);
         telegramBot.editMessage(msg, telegramBot.getWishListItemsRepository().findById(itemId).get().getTitle(),
                 BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListItemMenu(wishListId, itemId, telegramBot.getWishListItemsRepository()));
+    }
+
+    public void deleteWishList(Message msg, String messageText) {
+        String[] listId = messageText.split("_");
+        long wishListId = Long.parseLong(listId[1]);
+        telegramBot.getWishListsRepository().deleteById(wishListId);
+        telegramBot.editMessage(msg, "Список вишлистов",
+                BotStatus.WISH_LISTS, telegramBot.getInLineKeyboards().getWishLists(msg.getChatId(), telegramBot.getWishListsRepository()));
+        List<WishListItems> wlis = telegramBot.getWishListItemsRepository().findAllByWishListId(wishListId);
+        telegramBot.getWishListItemsRepository().deleteAll(wlis);
+
     }
 }
 

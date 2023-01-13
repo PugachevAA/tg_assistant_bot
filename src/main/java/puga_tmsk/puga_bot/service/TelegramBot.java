@@ -174,6 +174,9 @@ public class TelegramBot extends TelegramLongPollingBot {
                     editMessage(msg, "Вишлист: " + wishListsRepository.findById(wishListId).get().getTitle(),
                             BotStatus.WISH_LIST_ITEMS, inLineKeyboards.getWishListMenu(wishListId, wishListItemsRepository));
                 }
+                if (messageText.contains("wishlist_") && messageText.contains("_delete") && !messageText.contains("item")) {
+                    wishListApp.deleteWishList(msg, messageText);
+                }
 
                 //добавить в вишлист
                 if (messageText.contains("wishlist_") && messageText.contains("_items_add")) {
@@ -292,12 +295,41 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     public void setBotStatus(Message msg, BotStatus bs) {
-
+            BotStatus botStatus = getBotStatus(msg);
             UserSettings us = new UserSettings();
             us.setChatId(msg.getChatId());
             us.setBotStatus(bs.getId());
             userSettingsRepository.save(us);
             log.info("setBotStatus: " + bs.getId() + " for user: " + msg.getFrom().getUserName());
+            if (botStatus == BotStatus.WISH_LIST_ADD) {
+                List<WishLists> wls = wishListsRepository.findAllByUserIdAndAddMode(msg.getFrom().getId(), true);
+                for (WishLists wl: wls) {
+                    wl.setAddMode(false);
+                }
+                wishListsRepository.saveAll(wls);
+            }
+        if (botStatus == BotStatus.WISH_LIST_ITEM_ADD_LINK) {
+            List<WishListItems> wlis = new ArrayList<>();
+            List<WishLists> wls = wishListsRepository.findAllByUserId(msg.getFrom().getId());
+            for (WishLists wl: wls) {
+                wl.setAddMode(false);
+                wlis.addAll(wishListItemsRepository.findAllByWishListId(wl.getId()));
+            }
+            for (WishListItems wli : wlis) {
+                wli.setAddMode(false);
+            }
+            wishListsRepository.saveAll(wls);
+            wishListItemsRepository.saveAll(wlis);
+        }
+        if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME
+                || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
+            List<MonthlyPayments> mps = monthlyPaymentsRepository.findAllByUserId(msg.getFrom().getId());
+            for (MonthlyPayments mp : mps) {
+                mp.setAddFinish(false);
+            }
+            monthlyPaymentsRepository.saveAll(mps);
+        }
+
     }
 
 
