@@ -325,7 +325,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                 || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
             List<MonthlyPayments> mps = monthlyPaymentsRepository.findAllByUserId(msg.getFrom().getId());
             for (MonthlyPayments mp : mps) {
-                mp.setAddFinish(false);
+                mp.setAddFinish(true);
             }
             monthlyPaymentsRepository.saveAll(mps);
         }
