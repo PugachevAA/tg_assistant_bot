@@ -1,5 +1,6 @@
 package puga_tmsk.puga_bot.service.apps;
 
+import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import puga_tmsk.puga_bot.config.BotStatus;
 import puga_tmsk.puga_bot.model.WishListItems;
@@ -9,7 +10,9 @@ import puga_tmsk.puga_bot.model.WishListsRepository;
 import puga_tmsk.puga_bot.service.TelegramBot;
 
 import java.util.List;
+import java.util.Locale;
 
+@Slf4j
 public class WishListApp {
 
     TelegramBot telegramBot;
@@ -67,8 +70,12 @@ public class WishListApp {
     public void addWishListItemLink(Message msg) {
         long wishListId = telegramBot.getWishListsRepository().findByUserIdAndAddMode(msg.getFrom().getId(), true).getId();
         WishListItems wli = telegramBot.getWishListItemsRepository().findByWishListIdAndAddMode(wishListId, true);
-        if (msg.getText().contains("http://") || msg.getText().contains("https://")) {
-            wli.setLink(msg.getText());
+        if (msg.getText().toLowerCase().contains("http://") || msg.getText().toLowerCase().contains("https://")) {
+            String[] linkArr = msg.getText().split("http");
+            linkArr = linkArr[1].split(" ");
+            String link = "http" + linkArr[0];
+            log.info(link);
+            wli.setLink(link);
             wli.setAddMode(false);
             telegramBot.getWishListItemsRepository().save(wli);
             changeWishListMode(wishListId, false);

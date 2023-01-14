@@ -23,7 +23,7 @@ public class MonthlyPaymentsApp {
     }
 
     public void addItemPrice(Message msg) {
-        MonthlyPayments mpForAdd = telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(msg.getChatId(), false);
+        MonthlyPayments mpForAdd = telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(msg.getFrom().getId(), false);
         Double price;
         try {
             price = new Double(msg.getText());
