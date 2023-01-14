@@ -72,10 +72,14 @@ public class WishListApp {
         WishListItems wli = telegramBot.getWishListItemsRepository().findByWishListIdAndAddMode(wishListId, true);
         if (msg.getText().toLowerCase().contains("http://") || msg.getText().toLowerCase().contains("https://")) {
             String[] linkArr = msg.getText().split("http");
-            linkArr = linkArr[1].split(" ");
-            String link = "http" + linkArr[0];
-            log.info(link);
-            wli.setLink(link);
+            for (String l : linkArr) {
+                if (l.toLowerCase().contains("://")) {
+                    linkArr = l.split(" ");
+                    log.info("http" + linkArr[0]);
+                    wli.setLink("http" + linkArr[0]);
+                    break;
+                }
+            }
             wli.setAddMode(false);
             telegramBot.getWishListItemsRepository().save(wli);
             changeWishListMode(wishListId, false);

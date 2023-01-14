@@ -295,20 +295,26 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     public void setBotStatus(Message msg, BotStatus bs) {
-            BotStatus botStatus = getBotStatus(msg);
-            UserSettings us = new UserSettings();
-            us.setChatId(msg.getChatId());
-            us.setBotStatus(bs.getId());
-            userSettingsRepository.save(us);
-            log.info("setBotStatus: " + bs.getId() + " for user: " + msg.getFrom().getUserName());
-            if (botStatus == BotStatus.WISH_LIST_ADD) {
-                List<WishLists> wls = wishListsRepository.findAllByUserIdAndAddMode(msg.getFrom().getId(), true);
-                for (WishLists wl: wls) {
-                    wl.setAddMode(false);
-                }
-                wishListsRepository.saveAll(wls);
+        BotStatus botStatus = getBotStatus(msg);
+        UserSettings us = new UserSettings();
+        us.setChatId(msg.getChatId());
+        us.setBotStatus(bs.getId());
+        userSettingsRepository.save(us);
+        log.info("setBotStatus: " + bs.getId() + " for user: " + msg.getFrom().getUserName());
+
+
+
+    }
+    public void clearAllAddStatuses(Message msg) {
+        BotStatus bs = getBotStatus(msg);
+        if (bs == BotStatus.WISH_LIST_ADD) {
+            List<WishLists> wls = wishListsRepository.findAllByUserIdAndAddMode(msg.getFrom().getId(), true);
+            for (WishLists wl: wls) {
+                wl.setAddMode(false);
             }
-        if (botStatus == BotStatus.WISH_LIST_ITEM_ADD_LINK) {
+            wishListsRepository.saveAll(wls);
+        }
+        if (bs == BotStatus.WISH_LIST_ITEM_ADD_LINK) {
             List<WishListItems> wlis = new ArrayList<>();
             List<WishLists> wls = wishListsRepository.findAllByUserId(msg.getFrom().getId());
             for (WishLists wl: wls) {
@@ -321,15 +327,14 @@ public class TelegramBot extends TelegramLongPollingBot {
             wishListsRepository.saveAll(wls);
             wishListItemsRepository.saveAll(wlis);
         }
-        if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME
-                || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
+        if (bs == BotStatus.MONTHLY_PAYMENTS_ADD || bs == BotStatus.MONTHLY_PAYMENTS_ADD_NAME
+                || bs == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
             List<MonthlyPayments> mps = monthlyPaymentsRepository.findAllByUserId(msg.getFrom().getId());
             for (MonthlyPayments mp : mps) {
                 mp.setAddFinish(true);
             }
             monthlyPaymentsRepository.saveAll(mps);
         }
-
     }
 
 
@@ -339,12 +344,16 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     public void sendMessage(Message msg, String textToSend, BotStatus bs, InlineKeyboardMarkup inlineKeyboardMarkup) {
-        setBotStatus(msg, bs);
+        if (bs != null) {
+            setBotStatus(msg, bs);
+        }
         SendMessage sm = new SendMessage();
         sm.setChatId(String.valueOf(msg.getChatId()));
         sm.setText(textToSend);
 
-        sm.setReplyMarkup(inlineKeyboardMarkup);
+        if(inlineKeyboardMarkup != null) {
+            sm.setReplyMarkup(inlineKeyboardMarkup);
+        }
 
         try {
             execute(sm);
@@ -352,6 +361,22 @@ public class TelegramBot extends TelegramLongPollingBot {
         }
         catch (TelegramApiException e) {
             log.error("send error:" + e);
+        }
+    }
+
+    public void sendMessageForAll(Message msg) {
+        String textToSend = msg.getText().substring(msg.getText().indexOf(" "));
+        SendMessage sm = new SendMessage();
+        sm.setText(textToSend);
+        for (User user : userRepository.findAll()) {
+            sm.setChatId(String.valueOf(user.getChatId()));
+            try {
+                execute(sm);
+                log.info("Msg for All");
+            }
+            catch (TelegramApiException e) {
+                log.error("send error:" + e);
+            }
         }
     }
 }

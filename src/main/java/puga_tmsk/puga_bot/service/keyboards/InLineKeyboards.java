@@ -149,7 +149,7 @@ public class InLineKeyboards {
                 if (mp.getUserId() == userId) {
 //                    keyboardRows.add(row2btns(button(mp.getTitle() + ", " + mp.getPrice(), "/monthly_payments_" + mp.getId()),
 //                                                button(mp.getTitle(), "/monthly_payments_" + mp.getId() + "_payed")));
-                    keyboardRows.add(row1btn(button(mp.getTitle() + ", " + mp.getPrice(), "/monthly_payments_item_view_" + mp.getId())));
+                    keyboardRows.add(row1btn(button(mp.getTitle() + ", " + mp.getPrice() + "руб.", "/monthly_payments_item_view_" + mp.getId())));
                 }
             }
         }

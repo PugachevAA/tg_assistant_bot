@@ -57,12 +57,15 @@ public class MainTextHandler {
                     telegramBot.startCommandRecieved(msg);
                     break;
                 case "/main":
+                    telegramBot.clearAllAddStatuses(msg);
                     telegramBot.sendMessage(msg, "Главное меню",BotStatus.MAIN, inLineKeyboards.getMain());
                     break;
                 case "/help":
+                    telegramBot.clearAllAddStatuses(msg);
                     telegramBot.sendMessage(msg, HELP_TEXT, BotStatus.MAIN, null);
                     break;
                 case "/mydata":
+                    telegramBot.clearAllAddStatuses(msg);
                     User user = telegramBot.getUserRepository().findById(chatId).get();
                     String userData = user.toString();
                     telegramBot.sendMessage(msg, userData, BotStatus.MAIN, null);
@@ -93,6 +96,8 @@ public class MainTextHandler {
                         wishListApp.addWishListItem(msg);
                     } else if (botStatus == BotStatus.WISH_LIST_ITEM_ADD_LINK) {
                         wishListApp.addWishListItemLink(msg);
+                    } else if (messageText.contains("/sendtoall")) {
+                        telegramBot.sendMessageForAll(msg);
                     } else {
                             telegramBot.sendMessage(msg, "Чет не то, бро", BotStatus.MAIN, inLineKeyboards.getMain());
                             log.info("MESSAGE: User " + userFirstName + " send command " + messageText);
