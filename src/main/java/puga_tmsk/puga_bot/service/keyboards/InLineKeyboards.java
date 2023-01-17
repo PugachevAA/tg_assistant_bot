@@ -3,12 +3,18 @@ package puga_tmsk.puga_bot.service.keyboards;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import puga_tmsk.puga_bot.model.*;
+import puga_tmsk.puga_bot.service.TelegramBot;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public class InLineKeyboards {
+
+    TelegramBot telegramBot;
+    public InLineKeyboards(TelegramBot tgb) {
+        telegramBot = tgb;
+    }
 
     public InlineKeyboardMarkup getMain() {
 
@@ -26,6 +32,7 @@ public class InLineKeyboards {
 
         keyboardRows.add(row1btn(button("Сходить в магазин","/shoppinglist")));
         keyboardRows.add(row1btn(button("Вишлисты", "/wishlists_menu")));
+        keyboardRows.add(row1btn(button("TODO", "/todo_lists_menu")));
         //keyboardRows.add(row1btn(button("Подписки (в разработке)","/subscriptions")));
         keyboardRows.add(row1btn(button("Назад", "/main")));
 
@@ -33,31 +40,31 @@ public class InLineKeyboards {
     }
 
 
-    public InlineKeyboardMarkup getShoppingList(Long chatId, ShoppingListRepository shoppingListRepository) {
+    public InlineKeyboardMarkup getShoppingList(Long chatId) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.addAll(generateShoppingListButtons(chatId, shoppingListRepository));
+        keyboardRows.addAll(generateShoppingListButtons(chatId));
         keyboardRows.add(row2btns(button("Заполнить", "/shoplistadditems"), button("Назад", "/lists")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
 
-    public InlineKeyboardMarkup getShoppingListAdd(Long chatId, ShoppingListRepository shoppingListRepository) {
+    public InlineKeyboardMarkup getShoppingListAdd(Long chatId) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.addAll(generateShoppingListButtons(chatId, shoppingListRepository));
+        keyboardRows.addAll(generateShoppingListButtons(chatId));
         keyboardRows.add(row1btn(button("Закончить", "/shoplistendadd")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
 
-    public InlineKeyboardMarkup getMonthlyPayments(Long chatId, MonthlyPaymentsRepository mpr) {
+    public InlineKeyboardMarkup getMonthlyPayments(Long chatId) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.addAll(generateMonthlyPaymentsButtons(chatId, mpr));
+        keyboardRows.addAll(generateMonthlyPaymentsButtons(chatId));
         keyboardRows.add(row2btns(button("Добавить", "/monthly_payments_add"), button("Назад", "/main")));
 
         return new InlineKeyboardMarkup(keyboardRows);
@@ -87,32 +94,32 @@ public class InLineKeyboards {
 
 
 
-    public InlineKeyboardMarkup getWishLists(Long chatId, WishListsRepository wishListsRepository) {
+    public InlineKeyboardMarkup getWishLists(Long chatId) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.addAll(generateWishListsButtons(chatId, wishListsRepository));
+        keyboardRows.addAll(generateWishListsButtons(chatId));
         keyboardRows.add(row2btns(button("Добавить", "/wishlists_add"), button("Назад", "/lists")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
 
-    public InlineKeyboardMarkup getWishListMenu(long wishListId, WishListItemsRepository wishListItemsRepository) {
+    public InlineKeyboardMarkup getWishListMenu(long wishListId) {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.addAll(generateWishListItemsButtons(wishListId, wishListItemsRepository));
+        keyboardRows.addAll(generateWishListItemsButtons(wishListId));
         keyboardRows.add(row2btns(button("Добавить", "/wishlist_" + wishListId + "_items_add"), button("Удалить", "/wishlist_" + wishListId + "_delete")));
         keyboardRows.add(row1btn(button("Назад", "/wishlists_menu")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
 
-    private List<List<InlineKeyboardButton>> generateWishListItemsButtons(long wishlistId, WishListItemsRepository wishListItemsRepository) {
+    private List<List<InlineKeyboardButton>> generateWishListItemsButtons(long wishlistId) {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        if (wishListItemsRepository.count() > 0) {
-            for (WishListItems wli : wishListItemsRepository.findAllByWishListId(wishlistId)) {
+        if (telegramBot.getWishListItemsRepository().count() > 0) {
+            for (WishListItems wli : telegramBot.getWishListItemsRepository().findAllByWishListId(wishlistId)) {
                 keyboardRows.add(row1btn(button(wli.getTitle(), "/wishlist_" + wishlistId + "_item_" + wli.getId())));
             }
 
@@ -120,11 +127,11 @@ public class InLineKeyboards {
         return keyboardRows;
     }
 
-    private Collection<? extends List<InlineKeyboardButton>> generateWishListsButtons(Long chatId, WishListsRepository wishListsRepository) {
+    private Collection<? extends List<InlineKeyboardButton>> generateWishListsButtons(Long chatId) {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        if (wishListsRepository.count() > 0) {
-            for (WishLists wl : wishListsRepository.findAllByUserId(chatId)) {
+        if (telegramBot.getWishListsRepository().count() > 0) {
+            for (WishLists wl : telegramBot.getWishListsRepository().findAllByUserId(chatId)) {
                 keyboardRows.add(row1btn(button(wl.getTitle(), "/wishlist_" + wl.getId())));
             }
 
@@ -142,10 +149,10 @@ public class InLineKeyboards {
     }
 
 
-    private Collection<? extends List<InlineKeyboardButton>> generateMonthlyPaymentsButtons(Long userId, MonthlyPaymentsRepository mpr) {
+    private Collection<? extends List<InlineKeyboardButton>> generateMonthlyPaymentsButtons(Long userId) {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
-        if (mpr.count() > 0) {
-            for (MonthlyPayments mp : mpr.findAll()) {
+        if (telegramBot.getMonthlyPaymentsRepository().count() > 0) {
+            for (MonthlyPayments mp : telegramBot.getMonthlyPaymentsRepository().findAll()) {
                 if (mp.getUserId() == userId) {
 //                    keyboardRows.add(row2btns(button(mp.getTitle() + ", " + mp.getPrice(), "/monthly_payments_" + mp.getId()),
 //                                                button(mp.getTitle(), "/monthly_payments_" + mp.getId() + "_payed")));
@@ -157,11 +164,11 @@ public class InLineKeyboards {
     }
 
 
-    private List<List<InlineKeyboardButton>> generateShoppingListButtons(Long chatId, ShoppingListRepository shoppingListRepository) {
+    private List<List<InlineKeyboardButton>> generateShoppingListButtons(Long chatId) {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        if (shoppingListRepository.count() > 0) {
-            for (ShoppingList shoppingList1 : shoppingListRepository.findAll()) {
+        if (telegramBot.getShoppingListRepository().count() > 0) {
+            for (ShoppingList shoppingList1 : telegramBot.getShoppingListRepository().findAll()) {
                 if (shoppingList1.getChatId().equals(chatId)) {
                     keyboardRows.add(row1btn(button(shoppingList1.getProduct(), "/shoppinglist_" + shoppingList1.getId())));
                 }
@@ -197,14 +204,14 @@ public class InLineKeyboards {
         return checkButton;
     }
 
-    public InlineKeyboardMarkup getWishListItemMenu(long wishListId, long itemId, WishListItemsRepository wishListItemsRepository) {
+    public InlineKeyboardMarkup getWishListItemMenu(long wishListId, long itemId) {
 
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         //keyboardRows.add(row2btns(button("Изменить название", "/monthly_payments_item_edittitle_" + id),
         //                            button("Изменить платеж", "/monthly_payments_item_editprice_" + id)));
-        WishListItems wli = wishListItemsRepository.findById(itemId).get();
+        WishListItems wli = telegramBot.getWishListItemsRepository().findById(itemId).get();
         if (wli.getLink().equals("")) {
             keyboardRows.add(row1btn(button("Добавить ссылку", "/wishlist_" + wishListId + "_item_" + itemId + "_addlink")));
         } else {
@@ -212,6 +219,62 @@ public class InLineKeyboards {
         }
         keyboardRows.add(row1btn(button("Удалить","/wishlist_" + wishListId + "_item_" + itemId + "_delete")));
         keyboardRows.add(row1btn(button("Назад", "/wishlist_" + wishListId)));
+
+        return new InlineKeyboardMarkup(keyboardRows);
+    }
+
+    public InlineKeyboardMarkup getToDoListsMenu(Long chatId) {
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        keyboardRows.addAll(generateToDoListsButtons(chatId));
+        keyboardRows.add(row2btns(button("Добавить", "/todo_list_add"), button("Назад", "/lists")));
+
+        return new InlineKeyboardMarkup(keyboardRows);
+    }
+
+    private Collection<? extends List<InlineKeyboardButton>> generateToDoListsButtons(Long chatId) {
+
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        if (telegramBot.getToDoListRepository().count() > 0) {
+            for (ToDoList tdl : telegramBot.getToDoListRepository().findAllByUserId(chatId)) {
+                keyboardRows.add(row1btn(button(tdl.getTitle(), "/todo_list_" + tdl.getId())));
+            }
+
+        }
+        return keyboardRows;
+    }
+
+    public InlineKeyboardMarkup getToDoListItemsMenu(long todoId) {
+
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        keyboardRows.addAll(generateToDoListItemsButtons(todoId));
+        keyboardRows.add(row2btns(button("Добавить", "/todo_list_" + todoId + "_items_add"), button("Удалить", "/todo_list_" + todoId + "_delete")));
+        keyboardRows.add(row1btn(button("Назад", "/todo_lists_menu")));
+
+        return new InlineKeyboardMarkup(keyboardRows);
+    }
+
+    private Collection<? extends List<InlineKeyboardButton>> generateToDoListItemsButtons(long todoId) {
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        if (telegramBot.getToDoListRepository().count() > 0) {
+            for (ToDoListItem wli : telegramBot.getToDoListItemRepository().findAllByTodoListId(todoId)) {
+                keyboardRows.add(row1btn(button(wli.getTitle(), "/todo_list_" + todoId + "_item_" + wli.getId())));
+            }
+
+        }
+        return keyboardRows;
+    }
+
+
+    public InlineKeyboardMarkup getTodoListItemsAdd(long todoId) {
+
+        List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
+
+        keyboardRows.addAll(generateToDoListItemsButtons(todoId));
+        keyboardRows.add(row1btn(button("Закончить", "/todo_list_" + todoId + "_endadd")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }

@@ -12,7 +12,12 @@ public enum BotStatus {
     WISH_LIST_ADD(8),
     WISH_LIST_ITEMS(9),
     WISH_LIST_ITEM_ADD(10),
-    WISH_LIST_ITEM_ADD_LINK(11);
+    WISH_LIST_ITEM_ADD_LINK(11),
+    TODO(12),
+    TODO_LIST_ADD(13),
+    TODO_LIST(14),
+    TODO_LIST_ITEMS(15),
+    TODO_LIST_ITEMS_ADD(16);
 
 
     private int id;

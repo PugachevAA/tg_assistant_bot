@@ -3,24 +3,23 @@ package puga_tmsk.puga_bot.service.updateHandlers;
 import lombok.extern.slf4j.Slf4j;
 import org.telegram.telegrambots.meta.api.objects.Message;
 import puga_tmsk.puga_bot.config.BotStatus;
+import puga_tmsk.puga_bot.model.ToDoList;
 import puga_tmsk.puga_bot.model.User;
 import puga_tmsk.puga_bot.service.TelegramBot;
-import puga_tmsk.puga_bot.service.apps.MonthlyPaymentsApp;
-import puga_tmsk.puga_bot.service.apps.ShoppingListApp;
-import puga_tmsk.puga_bot.service.apps.UserActionsApp;
-import puga_tmsk.puga_bot.service.apps.WishListApp;
+import puga_tmsk.puga_bot.service.apps.*;
 import puga_tmsk.puga_bot.service.keyboards.InLineKeyboards;
 
 @Slf4j
 public class MainTextHandler {
 
     private final TelegramBot telegramBot;
-    private final InLineKeyboards inLineKeyboards;
+//    private final InLineKeyboards inLineKeyboards;
 
     private final UserActionsApp userActionsApp;
     private final ShoppingListApp shoppingListApp;
     private final MonthlyPaymentsApp monthlyPaymentsApp;
     private final WishListApp wishListApp;
+    private final ToDoApp toDoApp;
 
     private static final String HELP_TEXT = "Это мой тестовый бот. \n\n" +
             "Он уже умеет хранить список покупок для удобного похода в магазин :) \n" +
@@ -30,11 +29,12 @@ public class MainTextHandler {
 
     public MainTextHandler(TelegramBot tgb) {
         telegramBot = tgb;
-        inLineKeyboards = new InLineKeyboards();
+//        inLineKeyboards = new InLineKeyboards();
         userActionsApp = tgb.getUserActionsApp();
         shoppingListApp = tgb.getShoppingListApp();
         monthlyPaymentsApp = tgb.getMonthlyPaymentsApp();
         wishListApp = tgb.getWishListApp();
+        toDoApp = tgb.getToDoApp();
     }
 
     public void mesageHandler(Message msg) {
@@ -58,7 +58,7 @@ public class MainTextHandler {
                     break;
                 case "/main":
                     telegramBot.clearAllAddStatuses(msg);
-                    telegramBot.sendMessage(msg, "Главное меню",BotStatus.MAIN, inLineKeyboards.getMain());
+                    telegramBot.getMenu().main(msg);
                     break;
                 case "/help":
                     telegramBot.clearAllAddStatuses(msg);
@@ -72,23 +72,12 @@ public class MainTextHandler {
                     break;
                 default:
                     if (botStatus == BotStatus.SHOPPING_LIST_ADD) {
-                        switch (messageText) {
-                            case "/shoplistendadd":
-                                ShoppingListApp.endAdd();
-                                telegramBot.editMessage(msg, "Сходить в магазин", BotStatus.SHOPPING_LIST,
-                                        inLineKeyboards.getShoppingList(chatId, telegramBot.getShoppingListRepository()));
-                                break;
-                            default:
-                                shoppingListApp.addItem(msg);
-                        }
+                        shoppingListApp.addItem(msg);
                     } else if (botStatus.name().contains("MONTHLY_PAYMENTS_ADD_")) {
                         if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME) {
                             monthlyPaymentsApp.addItemName(msg);
-                            telegramBot.sendMessage(msg, "Введи сумму платежа:", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE,
-                                    inLineKeyboards.getMonthlyPaymentsAdd());
                         } else if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
                             monthlyPaymentsApp.addItemPrice(msg);
-                            telegramBot.sendMessage(msg, "Ежемесячные платежи", BotStatus.MONTHLY_PAYMENTS, inLineKeyboards.getMonthlyPayments(chatId, telegramBot.getMonthlyPaymentsRepository()));
                         }
                     } else if (botStatus == BotStatus.WISH_LIST_ADD) {
                         wishListApp.addWishList(msg);
@@ -98,8 +87,12 @@ public class MainTextHandler {
                         wishListApp.addWishListItemLink(msg);
                     } else if (messageText.contains("/sendtoall")) {
                         telegramBot.sendMessageForAll(msg);
+                    } else if (botStatus == BotStatus.TODO_LIST_ADD) {
+                        toDoApp.addToDoList(msg);
+                    } else if (botStatus == BotStatus.TODO_LIST_ITEMS_ADD) {
+                        toDoApp.addToDoListItems(msg);
                     } else {
-                            telegramBot.sendMessage(msg, "Чет не то, бро", BotStatus.MAIN, inLineKeyboards.getMain());
+                            telegramBot.sendMessage(msg, "Чет не то, бро", BotStatus.MAIN, telegramBot.getInLineKeyboards().getMain());
                             log.info("MESSAGE: User " + userFirstName + " send command " + messageText);
                     }
             }

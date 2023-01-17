@@ -24,7 +24,7 @@ public class WishListApp {
     public void addWishList(Message msg) {
         telegramBot.getWishListsRepository().save(new WishLists(msg.getText(), msg.getFrom().getId()));
         telegramBot.sendMessage(msg, "Список вишлистов:", BotStatus.WISH_LISTS,
-                telegramBot.getInLineKeyboards().getWishLists(msg.getChatId(), telegramBot.getWishListsRepository()));
+                telegramBot.getInLineKeyboards().getWishLists(msg.getChatId()));
     }
 
     public void addWishListItem(Message msg) {
@@ -38,7 +38,7 @@ public class WishListApp {
         wl.setAddMode(false);
         telegramBot.getWishListsRepository().save(wl);
         telegramBot.sendMessage(msg, "Вишлист: " + telegramBot.getWishListsRepository().findById(wishListId).get().getTitle(),
-                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(wishListId, telegramBot.getWishListItemsRepository()));
+                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(wishListId));
 
     }
 
@@ -54,7 +54,7 @@ public class WishListApp {
         long itemId = Long.parseLong(listId[3]);
         telegramBot.getWishListItemsRepository().deleteById(itemId);
         telegramBot.editMessage(msg, telegramBot.getWishListsRepository().findById(wishListId).get().getTitle(),
-                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(msg.getChatId(), telegramBot.getWishListItemsRepository()));
+                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(msg.getChatId()));
     }
 
     public void addWishListItemLinkMode(Message msg, String messageText) {
@@ -84,7 +84,7 @@ public class WishListApp {
             telegramBot.getWishListItemsRepository().save(wli);
             changeWishListMode(wishListId, false);
             telegramBot.sendMessage(msg, telegramBot.getWishListItemsRepository().findById(wli.getId()).get().getTitle(),
-                    BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListItemMenu(wishListId, wli.getId(), telegramBot.getWishListItemsRepository()));
+                    BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListItemMenu(wishListId, wli.getId()));
         } else {
             telegramBot.sendMessage(msg, "Некорректная ссылка, попробуй еще раз:",
                     BotStatus.WISH_LIST_ITEM_ADD_LINK, telegramBot.getInLineKeyboards().getCancelMenu("/wishlist_" + wishListId + "_item_" + wli.getId() + "_cancel"));
@@ -109,8 +109,7 @@ public class WishListApp {
         long itemId = Long.parseLong(listId[3]);
         changeWishListMode(wishListId, false);
         changeWishListItemMode(itemId, false);
-        telegramBot.editMessage(msg, telegramBot.getWishListItemsRepository().findById(itemId).get().getTitle(),
-                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListItemMenu(wishListId, itemId, telegramBot.getWishListItemsRepository()));
+        telegramBot.getMenu().wishListItemMenu(msg, wishListId, itemId);
     }
 
     public void deleteWishList(Message msg, String messageText) {
@@ -118,7 +117,7 @@ public class WishListApp {
         long wishListId = Long.parseLong(listId[1]);
         telegramBot.getWishListsRepository().deleteById(wishListId);
         telegramBot.editMessage(msg, "Список вишлистов",
-                BotStatus.WISH_LISTS, telegramBot.getInLineKeyboards().getWishLists(msg.getChatId(), telegramBot.getWishListsRepository()));
+                BotStatus.WISH_LISTS, telegramBot.getInLineKeyboards().getWishLists(msg.getChatId()));
         List<WishListItems> wlis = telegramBot.getWishListItemsRepository().findAllByWishListId(wishListId);
         telegramBot.getWishListItemsRepository().deleteAll(wlis);
 

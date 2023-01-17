@@ -19,10 +19,7 @@ import org.telegram.telegrambots.meta.exceptions.TelegramApiException;
 import puga_tmsk.puga_bot.config.BotConfig;
 import puga_tmsk.puga_bot.config.BotStatus;
 import puga_tmsk.puga_bot.model.*;
-import puga_tmsk.puga_bot.service.apps.MonthlyPaymentsApp;
-import puga_tmsk.puga_bot.service.apps.ShoppingListApp;
-import puga_tmsk.puga_bot.service.apps.UserActionsApp;
-import puga_tmsk.puga_bot.service.apps.WishListApp;
+import puga_tmsk.puga_bot.service.apps.*;
 import puga_tmsk.puga_bot.service.keyboards.InLineKeyboards;
 import puga_tmsk.puga_bot.service.keyboards.ReplyKeyboards;
 import puga_tmsk.puga_bot.service.updateHandlers.MainTextHandler;
@@ -35,11 +32,13 @@ import java.util.*;
 public class TelegramBot extends TelegramLongPollingBot {
 
     final BotConfig config;
+    final Menu menu;
 
     private final UserActionsApp userActionsApp;
     private final ShoppingListApp shoppingListApp;
     private final MonthlyPaymentsApp monthlyPaymentsApp;
     private final WishListApp wishListApp;
+    private final ToDoApp toDoApp;
 
     private final ReplyKeyboards replyKeyboards;
     private final InLineKeyboards inLineKeyboards;
@@ -62,16 +61,23 @@ public class TelegramBot extends TelegramLongPollingBot {
     private WishListsRepository wishListsRepository;
     @Autowired
     private WishListItemsRepository wishListItemsRepository;
+    @Autowired
+    private ToDoListRepository toDoListRepository;
+    @Autowired
+    private ToDoListItemRepository toDoListItemRepository;
 
     public TelegramBot(BotConfig config) {
+
+        menu = new Menu(this);
 
         userActionsApp = new UserActionsApp(this);
         shoppingListApp = new ShoppingListApp(this);
         monthlyPaymentsApp = new MonthlyPaymentsApp(this);
         wishListApp = new WishListApp(this);
+        toDoApp = new ToDoApp(this);
 
         replyKeyboards = new ReplyKeyboards();
-        inLineKeyboards = new InLineKeyboards();
+        inLineKeyboards = new InLineKeyboards(this);
 
         mainTextHandler = new MainTextHandler(this);
 
@@ -127,24 +133,18 @@ public class TelegramBot extends TelegramLongPollingBot {
             if (botStatus == BotStatus.SHOPPING_LIST_ADD) {
 
                 if (messageText.contains("/shoplistendadd")) {
-                    sendMessage(msg, "Твой список покупок:",BotStatus.SHOPPING_LIST,
-                            inLineKeyboards.getShoppingList(chatId, shoppingListRepository));
+                    shoppingListApp.endAdd(msg);
                 }
 
                 if (messageText.contains("/shoppinglist_")) {
-                    String[] itemId = messageText.split("_");
-                    shoppingListRepository.deleteById(Long.valueOf(itemId[1]));
-                    sendMessage(msg, "Вводи товары по одному, как закончишь нажми Закончить",BotStatus.SHOPPING_LIST_ADD,
-                            inLineKeyboards.getShoppingListAdd(chatId, shoppingListRepository));
-
+                    shoppingListApp.deleteItem(msg, messageText);
                 }
 
             } else if (botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_NAME || botStatus == BotStatus.MONTHLY_PAYMENTS_ADD_PRICE) {
 
                 if (messageText.contains("/monthly_payments_add_cancel")) {
-                    monthlyPaymentsApp.cancelAddItem(chatId);
-                    sendMessage(msg, "Ежемесячные платежи:", BotStatus.MONTHLY_PAYMENTS,
-                            inLineKeyboards.getMonthlyPayments(chatId, monthlyPaymentsRepository));
+                    monthlyPaymentsApp.cancelAddItem(msg);
+                    menu.monthlyPaymentsMenu(msg);
                 }
             } else if (botStatus == BotStatus.WISH_LIST_ITEM_ADD_LINK) {
                 if (messageText.contains("/wishlist_") && messageText.contains("_item_") && messageText.contains("_cancel")) {
@@ -152,13 +152,12 @@ public class TelegramBot extends TelegramLongPollingBot {
                 }
             } else {
 
+                //удалить покупку
                 if (messageText.contains("/shoppinglist_")) {
-                    String[] itemId = messageText.split("_");
-                    shoppingListRepository.deleteById(Long.valueOf(itemId[1]));
-                    editMessage(msg, "", BotStatus.SHOPPING_LIST,
-                            inLineKeyboards.getShoppingList(chatId, shoppingListRepository));
+                    shoppingListApp.deleteItem(msg, messageText);
                 }
 
+                //открыть пункт ежемесячного платежа
                 if (messageText.contains("/monthly_payments_item_view_")) {
                     String[] itemId = messageText.split("_");
                     long id = Long.parseLong(itemId[4]);
@@ -172,8 +171,10 @@ public class TelegramBot extends TelegramLongPollingBot {
                     String[] listId = messageText.split("_");
                     long wishListId = Long.parseLong(listId[1]);
                     editMessage(msg, "Вишлист: " + wishListsRepository.findById(wishListId).get().getTitle(),
-                            BotStatus.WISH_LIST_ITEMS, inLineKeyboards.getWishListMenu(wishListId, wishListItemsRepository));
+                            BotStatus.WISH_LIST_ITEMS, inLineKeyboards.getWishListMenu(wishListId));
                 }
+
+                //удалить вишлист
                 if (messageText.contains("wishlist_") && messageText.contains("_delete") && !messageText.contains("item")) {
                     wishListApp.deleteWishList(msg, messageText);
                 }
@@ -193,7 +194,7 @@ public class TelegramBot extends TelegramLongPollingBot {
                     long itemId = Long.parseLong(listId[3]);
 
                     editMessage(msg, wishListItemsRepository.findById(itemId).get().getTitle(),
-                            BotStatus.WISH_LIST_ITEMS, inLineKeyboards.getWishListItemMenu(wishListId, itemId, wishListItemsRepository));
+                            BotStatus.WISH_LIST_ITEMS, inLineKeyboards.getWishListItemMenu(wishListId, itemId));
                 }
 
                 //добавить ссылку
@@ -208,46 +209,79 @@ public class TelegramBot extends TelegramLongPollingBot {
                     wishListApp.deleteWishListItem(msg, messageText);
                 }
 
-
-
+                //удалить пункт Ежемесячного платежа
                 if (messageText.contains("/monthly_payments_item_delete_")) {
                     String[] itemId = messageText.split("_");
                     long id = Long.parseLong(itemId[4]);
                     monthlyPaymentsApp.deleteItem(id);
                     editMessage(msg, "Ежемесячные платежи",BotStatus.MONTHLY_PAYMENTS,
-                            inLineKeyboards.getMonthlyPayments(chatId, monthlyPaymentsRepository));
+                            inLineKeyboards.getMonthlyPayments(chatId));
+                }
+
+                //открыть to do лист
+                if (messageText.contains("/todo_list_") && !messageText.contains("/_delete") &&
+                    !messageText.contains("_add") && !messageText.contains("_item_")) {
+                    toDoApp.openToDoList(msg, messageText);
+                }
+
+                //удалить to do лист
+                if (messageText.contains("todo_list_") && messageText.contains("_delete") &&
+                    !messageText.contains("_item")) {
+                    toDoApp.deleteTodoList(msg, messageText);
+                }
+
+                //добавить в to do лист
+                if (messageText.contains("todo_list_") && messageText.contains("_items_add")) {
+                    String[] listId = messageText.split("_");
+                    long todoListId = Long.parseLong(listId[2]);
+                    toDoApp.addTodoListItemMode(msg, todoListId);
+                }
+
+                //закончить добавление в to do лист
+                if (messageText.contains("/todo_list_") && messageText.contains("_endadd")) {
+                    String[] listId = messageText.split("_");
+                    long todoListId = Long.parseLong(listId[2]);
+                    toDoApp.stopTodoListItemsAdd(msg, todoListId);
+                }
+
+                //удалить из to do листа пункт
+                if (messageText.contains("/todo_list_") && messageText.contains("_item_")) {
+                    String[] listId = messageText.split("_");
+                    long todoListId = Long.parseLong(listId[2]);
+                    long itemId = Long.parseLong(listId[4]);
+                    toDoApp.deleteTodoListItem(msg, todoListId, itemId);
                 }
 
                 switch (messageText) {
                     case "/main":
-                        editMessage(msg, "Главное меню", BotStatus.MAIN, inLineKeyboards.getMain());
+                        menu.main(msg);
                         break;
                     case "/lists":
-                        editMessage(msg, "Списки", BotStatus.MAIN, inLineKeyboards.getLists());
+                        menu.listsMenu(msg);
                         break;
                     case "/monthly_payments":
-                        editMessage(msg, "Ежемесячные платежи", BotStatus.MONTHLY_PAYMENTS,
-                                inLineKeyboards.getMonthlyPayments(chatId, monthlyPaymentsRepository));
+                        menu.monthlyPaymentsMenu(msg);
                         break;
                     case "/monthly_payments_add":
-                        editMessage(msg, "Введи название платежа", BotStatus.MONTHLY_PAYMENTS_ADD_NAME,
-                                inLineKeyboards.getMonthlyPaymentsAdd());
+                        menu.monthlyPaymentsAddMenu(msg);
                         break;
                     case "/shoppinglist":
-                        editMessage(msg, "Сходить в магазин", BotStatus.SHOPPING_LIST,
-                                inLineKeyboards.getShoppingList(chatId, shoppingListRepository));
+                        menu.shoppingListMenu(msg, BotStatus.SHOPPING_LIST);
                         break;
                     case "/shoplistadditems":
-                        editMessage(msg, "Вводи и отправляй покупки по одному сообщению, в конце нажми Закончить",
-                                BotStatus.SHOPPING_LIST_ADD, inLineKeyboards.getShoppingListAdd(chatId, shoppingListRepository));
+                        menu.shoppingListAddMenu(msg);
                         break;
                     case "/wishlists_menu":
-                        editMessage(msg, "Список вишлистов",
-                            BotStatus.WISH_LISTS, inLineKeyboards.getWishLists(chatId, wishListsRepository));
+                        menu.wishListsMenu(msg);
                         break;
                     case "/wishlists_add":
-                        editMessage(msg, "Введи название списка:",
-                                BotStatus.WISH_LIST_ADD, inLineKeyboards.getCancelMenu("/wishlists"));
+                        menu.wishListAddMenu(msg);
+                        break;
+                    case "/todo_lists_menu":
+                        menu.toDoLists(msg);
+                        break;
+                    case "/todo_list_add":
+                        menu.toDoListAddMenu(msg);
                         break;
                     }
                 }
@@ -295,12 +329,11 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     public void setBotStatus(Message msg, BotStatus bs) {
-        BotStatus botStatus = getBotStatus(msg);
         UserSettings us = new UserSettings();
         us.setChatId(msg.getChatId());
         us.setBotStatus(bs.getId());
         userSettingsRepository.save(us);
-        log.info("setBotStatus: " + bs.getId() + " for user: " + msg.getFrom().getUserName());
+        log.info("setBotStatus: " + bs.getId() + " for user: " + msg.getChat().getUserName());
 
 
 
@@ -334,6 +367,13 @@ public class TelegramBot extends TelegramLongPollingBot {
                 mp.setAddFinish(true);
             }
             monthlyPaymentsRepository.saveAll(mps);
+        }
+        if (bs == BotStatus.TODO_LIST_ADD || bs == BotStatus.TODO_LIST_ITEMS_ADD) {
+            List<ToDoList> tls = toDoListRepository.findAllByUserId(msg.getChatId());
+            for (ToDoList tl : tls) {
+                tl.setAddMode(false);
+            }
+            toDoListRepository.saveAll(tls);
         }
     }
 

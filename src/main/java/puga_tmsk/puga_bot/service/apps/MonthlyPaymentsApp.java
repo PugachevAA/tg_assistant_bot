@@ -20,6 +20,8 @@ public class MonthlyPaymentsApp {
         mpForAdd.setPrice(BigDecimal.valueOf(0));
         mpForAdd.setAddFinish(false);
         telegramBot.getMonthlyPaymentsRepository().save(mpForAdd);
+        telegramBot.sendMessage(msg, "Введи сумму платежа:", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE,
+                telegramBot.getInLineKeyboards().getMonthlyPaymentsAdd());
     }
 
     public void addItemPrice(Message msg) {
@@ -30,6 +32,9 @@ public class MonthlyPaymentsApp {
             mpForAdd.setPrice(BigDecimal.valueOf(price));
             mpForAdd.setAddFinish(true);
             telegramBot.getMonthlyPaymentsRepository().save(mpForAdd);
+
+            telegramBot.sendMessage(msg, "Ежемесячные платежи",
+                    BotStatus.MONTHLY_PAYMENTS, telegramBot.getInLineKeyboards().getMonthlyPayments(msg.getChatId()));
         } catch (NumberFormatException e) {
             telegramBot.sendMessage(msg,"Неверно введена цена, попробуй еще раз", BotStatus.MONTHLY_PAYMENTS_ADD_PRICE,
                     telegramBot.getInLineKeyboards().getMonthlyPaymentsAdd());
@@ -37,10 +42,10 @@ public class MonthlyPaymentsApp {
 
     }
 
-    public void cancelAddItem(long chatId) {
-        MonthlyPayments mp = telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(chatId, false);
+    public void cancelAddItem(Message msg) {
+        MonthlyPayments mp = telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(msg.getChatId(), false);
         if (mp != null) {
-            telegramBot.getMonthlyPaymentsRepository().delete(telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(chatId, false));
+            telegramBot.getMonthlyPaymentsRepository().delete(telegramBot.getMonthlyPaymentsRepository().findByUserIdAndAddFinish(msg.getChatId(), false));
         }
     }
 
