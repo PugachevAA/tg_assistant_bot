@@ -86,9 +86,9 @@ public class Menu {
                 telegramBot.getInLineKeyboards().getToDoListItemsMenu(listId));
     }
 
-    public void toDoListItemsAddMenu(Message msg) {
+    public void toDoListItemsAddMenu(Message msg, long todoListId) {
         telegramBot.editMessage(msg, TODO_LIST_ITEM_ADD_TITLE,
-                BotStatus.TODO_LIST_ITEMS_ADD, telegramBot.getInLineKeyboards().getShoppingListAdd(msg.getChatId()));
+                BotStatus.TODO_LIST_ITEMS_ADD, telegramBot.getInLineKeyboards().getTodoListItemsAdd(todoListId));
     }
 
     public void newToDoListItemsMenu(Message msg, String title, long listId) {

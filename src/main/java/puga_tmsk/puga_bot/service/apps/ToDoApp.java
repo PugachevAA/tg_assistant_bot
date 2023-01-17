@@ -35,7 +35,7 @@ public class ToDoApp {
 
     public void addTodoListItemMode(Message msg, long todoListId) {
         changeTodoListMode(todoListId, true);
-        telegramBot.getMenu().toDoListItemsAddMenu(msg);
+        telegramBot.getMenu().toDoListItemsAddMenu(msg, todoListId);
     }
 
     public void changeTodoListMode(long todoListId, boolean b) {
