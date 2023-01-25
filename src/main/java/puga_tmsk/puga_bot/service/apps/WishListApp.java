@@ -54,7 +54,7 @@ public class WishListApp {
         long itemId = Long.parseLong(listId[3]);
         telegramBot.getWishListItemsRepository().deleteById(itemId);
         telegramBot.editMessage(msg, telegramBot.getWishListsRepository().findById(wishListId).get().getTitle(),
-                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(msg.getChatId()));
+                BotStatus.WISH_LIST_ITEMS, telegramBot.getInLineKeyboards().getWishListMenu(wishListId));
     }
 
     public void addWishListItemLinkMode(Message msg, String messageText) {
