@@ -174,6 +174,11 @@ public class TelegramBot extends TelegramLongPollingBot {
                             BotStatus.WISH_LIST_ITEMS, inLineKeyboards.getWishListMenu(wishListId));
                 }
 
+                //скопировать вишлист
+                if (messageText.contains("wishlist_") && messageText.contains("_copy") && !messageText.contains("item")) {
+                    wishListApp.copyWishList(msg, messageText);
+                }
+
                 //удалить вишлист
                 if (messageText.contains("wishlist_") && messageText.contains("_delete") && !messageText.contains("item")) {
                     wishListApp.deleteWishList(msg, messageText);
@@ -384,6 +389,7 @@ public class TelegramBot extends TelegramLongPollingBot {
 
 
     public void sendMessage(Message msg, String textToSend, BotStatus bs, InlineKeyboardMarkup inlineKeyboardMarkup) {
+
         if (bs != null) {
             setBotStatus(msg, bs);
         }

@@ -24,6 +24,9 @@ public class Menu {
     }
 
     public void main(Message msg) {
+        telegramBot.editMessage(msg, MAIN_TITLE, BotStatus.MAIN, telegramBot.getInLineKeyboards().getMain());
+    }
+    public void newMain(Message msg) {
         telegramBot.sendMessage(msg, MAIN_TITLE, BotStatus.MAIN, telegramBot.getInLineKeyboards().getMain());
     }
 

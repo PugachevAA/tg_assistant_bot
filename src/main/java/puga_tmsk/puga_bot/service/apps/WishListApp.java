@@ -122,5 +122,22 @@ public class WishListApp {
         telegramBot.getWishListItemsRepository().deleteAll(wlis);
 
     }
+
+    public void copyWishList(Message msg, String messageText) {
+        String[] listId = messageText.split("_");
+        long wishListId = Long.parseLong(listId[1]);
+        List<WishListItems> wli = telegramBot.getWishListItemsRepository().findAllByWishListId(wishListId);
+        String answer = "Вот мой вишлист:\n\n";
+        int n = 1;
+        for (WishListItems item : wli) {
+            answer = answer + n + ". " + item.getTitle() + "\n";
+            if (!item.getLink().equals("")) {
+                answer = answer + "Ссылка: " + item.getLink() + "\n";
+            }
+            answer = answer + "\n";
+            n = n + 1;
+        }
+        telegramBot.sendMessage(msg, answer, null, null);
+    }
 }
 

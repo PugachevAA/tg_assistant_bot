@@ -58,7 +58,7 @@ public class MainTextHandler {
                     break;
                 case "/main":
                     telegramBot.clearAllAddStatuses(msg);
-                    telegramBot.getMenu().main(msg);
+                    telegramBot.getMenu().newMain(msg);
                     break;
                 case "/help":
                     telegramBot.clearAllAddStatuses(msg);

@@ -5,6 +5,8 @@ import lombok.Data;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
+import java.util.ArrayList;
+import java.util.List;
 
 @Data
 @Entity(name = "wishListItems")
@@ -17,4 +19,10 @@ public class WishListItems {
     private String title;
     private String link;
     private boolean addMode;
+
+    public String copyOnText(List<WishListItems> wli) {
+        List<WishListItems> list = new ArrayList<>();
+//        list =
+        return "";
+    }
 }

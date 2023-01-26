@@ -1,5 +1,6 @@
 package puga_tmsk.puga_bot.service.keyboards;
 
+import com.vdurmont.emoji.EmojiParser;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.InlineKeyboardMarkup;
 import org.telegram.telegrambots.meta.api.objects.replykeyboard.buttons.InlineKeyboardButton;
 import puga_tmsk.puga_bot.model.*;
@@ -10,6 +11,16 @@ import java.util.Collection;
 import java.util.List;
 
 public class InLineKeyboards {
+    private final String BTN_DELETE = EmojiParser.parseToUnicode(":wastebasket: Удалить");
+    private final String BTN_DELETE_EMJ = EmojiParser.parseToUnicode(":wastebasket:");
+    private final String BTN_ADD = EmojiParser.parseToUnicode(":heavy_plus_sign: Добавить");
+    private final String BTN_ADD_EMJ = EmojiParser.parseToUnicode(":heavy_plus_sign:");
+    private final String BTN_BACK = EmojiParser.parseToUnicode(":leftwards_arrow_with_hook: Назад");
+    private final String BTN_CANCEL = EmojiParser.parseToUnicode(":heavy_multiplication_x: Отменить");
+    private final String BTN_WRITE = EmojiParser.parseToUnicode(":memo: Заполнить");
+    private final String BTN_END = EmojiParser.parseToUnicode(":white_check_mark: Закончить");
+    private final String BTN_COPY = EmojiParser.parseToUnicode(":outbox_tray: Скопир-ть");
+    private final String BTN_COPY_EMJ = EmojiParser.parseToUnicode(":outbox_tray:");
 
     TelegramBot telegramBot;
     public InLineKeyboards(TelegramBot tgb) {
@@ -31,10 +42,10 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.add(row1btn(button("Сходить в магазин","/shoppinglist")));
-        keyboardRows.add(row1btn(button("Вишлисты", "/wishlists_menu")));
-        keyboardRows.add(row1btn(button("TODO", "/todo_lists_menu")));
+        keyboardRows.add(row1btn(button("Твои вишлисты", "/wishlists_menu")));
+        keyboardRows.add(row1btn(button("TODO - списки дел", "/todo_lists_menu")));
         //keyboardRows.add(row1btn(button("Подписки (в разработке)","/subscriptions")));
-        keyboardRows.add(row1btn(button("Назад", "/main")));
+        keyboardRows.add(row1btn(button(BTN_BACK, "/main")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -45,7 +56,7 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateShoppingListButtons(chatId));
-        keyboardRows.add(row2btns(button("Заполнить", "/shoplistadditems"), button("Назад", "/lists")));
+        keyboardRows.add(row2btns(button(BTN_WRITE, "/shoplistadditems"), button(BTN_BACK, "/lists")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -55,7 +66,7 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateShoppingListButtons(chatId));
-        keyboardRows.add(row1btn(button("Закончить", "/shoplistendadd")));
+        keyboardRows.add(row1btn(button(BTN_END, "/shoplistendadd")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -65,7 +76,7 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateMonthlyPaymentsButtons(chatId));
-        keyboardRows.add(row2btns(button("Добавить", "/monthly_payments_add"), button("Назад", "/main")));
+        keyboardRows.add(row2btns(button(BTN_ADD, "/monthly_payments_add"), button(BTN_BACK, "/main")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -74,7 +85,7 @@ public class InLineKeyboards {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.add(row1btn(button("Отменить", "/monthly_payments_add_cancel")));
+        keyboardRows.add(row1btn(button(BTN_CANCEL, "/monthly_payments_add_cancel")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -85,8 +96,8 @@ public class InLineKeyboards {
 
         //keyboardRows.add(row2btns(button("Изменить название", "/monthly_payments_item_edittitle_" + id),
         //                            button("Изменить платеж", "/monthly_payments_item_editprice_" + id)));
-        keyboardRows.add(row1btn(button("Удалить","/monthly_payments_item_delete_" + id)));
-        keyboardRows.add(row1btn(button("Назад", "/monthly_payments")));
+        keyboardRows.add(row1btn(button(BTN_DELETE,"/monthly_payments_item_delete_" + id)));
+        keyboardRows.add(row1btn(button(BTN_BACK, "/monthly_payments")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -99,7 +110,7 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateWishListsButtons(chatId));
-        keyboardRows.add(row2btns(button("Добавить", "/wishlists_add"), button("Назад", "/lists")));
+        keyboardRows.add(row2btns(button(BTN_ADD, "/wishlists_add"), button(BTN_BACK, "/lists")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -109,8 +120,10 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateWishListItemsButtons(wishListId));
-        keyboardRows.add(row2btns(button("Добавить", "/wishlist_" + wishListId + "_items_add"), button("Удалить", "/wishlist_" + wishListId + "_delete")));
-        keyboardRows.add(row1btn(button("Назад", "/wishlists_menu")));
+        keyboardRows.add(row3btns(button(BTN_ADD_EMJ, "/wishlist_" + wishListId + "_items_add"),
+                button(BTN_COPY_EMJ, "/wishlist_" + wishListId + "_copy"),
+                button(BTN_DELETE_EMJ, "/wishlist_" + wishListId + "_delete")));
+        keyboardRows.add(row1btn(button(BTN_BACK, "/wishlists_menu")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -143,7 +156,7 @@ public class InLineKeyboards {
 
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
-        keyboardRows.add(row1btn(button("Отменить", backData)));
+        keyboardRows.add(row1btn(button(BTN_CANCEL, backData)));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -189,6 +202,13 @@ public class InLineKeyboards {
         row.add(btn2);
         return row;
     }
+    private List<InlineKeyboardButton> row3btns(InlineKeyboardButton btn1,InlineKeyboardButton btn2,InlineKeyboardButton btn3) {
+        List<InlineKeyboardButton> row = new ArrayList<>();
+        row.add(btn1);
+        row.add(btn2);
+        row.add(btn3);
+        return row;
+    }
 
     private InlineKeyboardButton button(String text, String data) {
         InlineKeyboardButton checkButton = new InlineKeyboardButton();
@@ -217,8 +237,8 @@ public class InLineKeyboards {
         } else {
             keyboardRows.add(row1btn(linkButton("Открыть ссылку",wli.getLink())));
         }
-        keyboardRows.add(row1btn(button("Удалить","/wishlist_" + wishListId + "_item_" + itemId + "_delete")));
-        keyboardRows.add(row1btn(button("Назад", "/wishlist_" + wishListId)));
+        keyboardRows.add(row1btn(button(BTN_DELETE,"/wishlist_" + wishListId + "_item_" + itemId + "_delete")));
+        keyboardRows.add(row1btn(button(BTN_BACK, "/wishlist_" + wishListId)));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -227,7 +247,7 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateToDoListsButtons(chatId));
-        keyboardRows.add(row2btns(button("Добавить", "/todo_list_add"), button("Назад", "/lists")));
+        keyboardRows.add(row2btns(button(BTN_ADD, "/todo_list_add"), button(BTN_BACK, "/lists")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -250,8 +270,8 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateToDoListItemsButtons(todoId));
-        keyboardRows.add(row2btns(button("Добавить", "/todo_list_" + todoId + "_items_add"), button("Удалить", "/todo_list_" + todoId + "_delete")));
-        keyboardRows.add(row1btn(button("Назад", "/todo_lists_menu")));
+        keyboardRows.add(row2btns(button(BTN_ADD, "/todo_list_" + todoId + "_items_add"), button(BTN_DELETE, "/todo_list_" + todoId + "_delete")));
+        keyboardRows.add(row1btn(button(BTN_BACK, "/todo_lists_menu")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
@@ -274,7 +294,7 @@ public class InLineKeyboards {
         List<List<InlineKeyboardButton>> keyboardRows = new ArrayList<>();
 
         keyboardRows.addAll(generateToDoListItemsButtons(todoId));
-        keyboardRows.add(row1btn(button("Закончить", "/todo_list_" + todoId + "_endadd")));
+        keyboardRows.add(row1btn(button(BTN_END, "/todo_list_" + todoId + "_endadd")));
 
         return new InlineKeyboardMarkup(keyboardRows);
     }
